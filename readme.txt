@@ -54,12 +54,12 @@ Gets a block volume of the map. First right click the lower left corner closest
 to the player. Then the top right corner the furthest forward. This orientation
 is always assumed. If the second height is less than the first they are
 switched. A chat message is sent to the player when the first position is
-set, and the again when the second is set. If the volume of the section
+set, and then again when the second is set. If the volume of the section
 region is greater than the Maximum section volume setting a message is sent
 to the player, and the operation is cancelled. After the second position
 is selected a form opens containing the data of that section. This can
-then be copied out. A log message is issued with the volume of node exported
-a the milliseconds for the operation. The format of this data is compatible
+then be copied out. A log message is issued with the volume of nodes exported
+and the milliseconds for the operation. The format of this data is compatible
 with lwcreative_tools buffer tool.
 ** This tool does not make any alterations to the map.
 
