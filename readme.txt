@@ -58,8 +58,9 @@ set, and the again when the second is set. If the volume of the section
 region is greater than the Maximum section volume setting a message is sent
 to the player, and the operation is cancelled. After the second position
 is selected a form opens containing the data of that section. This can
-then be copied out. The format of this data is compatible with lwcreative_tools
-buffer tool.
+then be copied out. A log message is issued with the volume of node exported
+a the milliseconds for the operation. The format of this data is compatible
+with lwcreative_tools buffer tool.
 ** This tool does not make any alterations to the map.
 
 
