@@ -39,7 +39,7 @@ Copy the 'lwexport_tools' folder to your mods folder.
 
 Bug Report
 ==========
-
+https://forum.minetest.net/viewtopic.php?f=9&t=28534
 
 
 Description
