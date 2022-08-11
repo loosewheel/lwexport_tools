@@ -52,9 +52,13 @@ local function on_place (itemstack, placer, pointed_thing)
 
 				meta:set_int ("phase", 0)
 
+				local tm = os.clock ()
 				local spec = utils.copy_section (pos1, pos2, param2)
 
 				if spec then
+					local x = spec.lenx
+					local y = spec.leny
+					local z = spec.lenz
 					local success
 
 					success, spec = pcall (minetest.serialize, spec)
@@ -76,6 +80,9 @@ local function on_place (itemstack, placer, pointed_thing)
 																			minetest.pos_to_string (pos2, 0)))
 
 						minetest.show_formspec (placer:get_player_name (), "lwexport_tools:section", spec)
+
+						minetest.log ("action", string.format ("[lwexport_tools] Export section %d nodes %dms",
+																			(x * y * z) , ((os.clock () - tm) * 1000)))
 					else
 						utils.player_error_message (placer, "Error reading section to export!")
 					end
