@@ -1,0 +1,2 @@
+# Maximum block volume for a export section operation.
+lwexport_tools_max_section_volume (Maximum section volume) int 64000
