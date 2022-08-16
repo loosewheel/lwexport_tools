@@ -16,6 +16,31 @@ end
 
 
 
+local minetest_version
+
+do
+	local parts = { }
+
+	for n in string.gmatch (minetest.get_version ().string or "", "%d+") do
+		parts[#parts + 1] = n
+	end
+
+	minetest_version =
+	{
+		major = (tonumber (parts[1]) or 0),
+		minor = (tonumber (parts[2]) or 0),
+		patch = (tonumber (parts[3]) or 0)
+	}
+end
+
+
+
+function utils.get_minetest_version ()
+	return minetest_version
+end
+
+
+
 function utils.player_message (player, msg)
 	local name
 
@@ -164,7 +189,7 @@ end
 
 
 
-function utils.get_node_data (pos)
+function utils.get_node_data (pos, metas)
 	local node = utils.get_far_node (pos)
 
 	if node then
@@ -173,11 +198,8 @@ function utils.get_node_data (pos)
 
 			if def then
 				local meta_table = nil
-				local drops = nil
 
-				local has_meta = minetest.find_nodes_with_meta (pos, pos)
-
-				if has_meta and #has_meta > 0 then
+				if metas[minetest.pos_to_string (pos, 0)] then
 					local meta = minetest.get_meta (pos)
 
 					if not meta then
@@ -199,17 +221,7 @@ function utils.get_node_data (pos)
 					end
 				end
 
-				local items = minetest.get_node_drops (node, nil)
-
-				if items then
-					drops = { }
-
-					for i = 1, #items do
-						drops[i] = ItemStack (items[i])
-					end
-				end
-
-				return { node = node, meta = meta_table, drops = drops }
+				return { node = node, meta = meta_table }
 			end
 		else
 			return { node = { name = "air" } }
@@ -221,8 +233,22 @@ end
 
 
 
+local function get_node_meta_list (pos1, pos2)
+	local list = minetest.find_nodes_with_meta (pos1, pos2)
+	local metas = { }
+
+	for i = 1, #list, 1 do
+		metas[minetest.pos_to_string (list[i], 0)] = true
+	end
+
+	return metas
+end
+
+
+
 function utils.copy_section (pos1, pos2, param2)
 	local map
+	local metas = get_node_meta_list (pos1, pos2)
 
 	if param2 == 3 or param2 == 1 then
 		local incx = (pos2.z < pos1.z and -1) or 1
@@ -248,10 +274,7 @@ function utils.copy_section (pos1, pos2, param2)
 						z = pos1.z + (x * incx)
 					}
 
-					local node_data = utils.get_node_data (pos)
-					node_data.drops = nil
-
-					map[y][z][x] = node_data
+					map[y][z][x] = utils.get_node_data (pos, metas)
 				end
 			end
 		end
@@ -279,10 +302,7 @@ function utils.copy_section (pos1, pos2, param2)
 						z = pos1.z + (z * incz)
 					}
 
-					local node_data = utils.get_node_data (pos)
-					node_data.drops = nil
-
-					map[y][z][x] = node_data
+					map[y][z][x] = utils.get_node_data (pos, metas)
 				end
 			end
 		end

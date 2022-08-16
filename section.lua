@@ -31,9 +31,11 @@ local function on_place (itemstack, placer, pointed_thing)
 					pos1.y = y
 				end
 
-				if (math.abs (pos2.x - pos1.x) * math.abs (pos2.y - pos1.y) *
-					 math.abs (pos2.z - pos1.z)) > utils.settings.max_section_volume then
+				local volume = (math.abs (pos2.x - pos1.x) + 1) *
+									(math.abs (pos2.y - pos1.y) + 1) *
+									(math.abs (pos2.z - pos1.z) + 1)
 
+				if volume > utils.settings.max_section_volume then
 					utils.player_error_message (placer, "Volume to large to export!")
 					meta:set_int ("phase", 0)
 
@@ -56,9 +58,6 @@ local function on_place (itemstack, placer, pointed_thing)
 				local spec = utils.copy_section (pos1, pos2, param2)
 
 				if spec then
-					local x = spec.lenx
-					local y = spec.leny
-					local z = spec.lenz
 					local success
 
 					success, spec = pcall (minetest.serialize, spec)
@@ -68,7 +67,7 @@ local function on_place (itemstack, placer, pointed_thing)
 						"formspec_version[3]"..
 						"size[11,11]"..
 						"textarea[0.5,0.5;10,10;clipboard;;"..
-						 minetest.formspec_escape (spec).."]"
+						minetest.formspec_escape (spec).."]"
 
 						utils.player_message (placer, string.format ("Export section %s to %s",
 																					minetest.pos_to_string (pos1, 0),
@@ -82,7 +81,7 @@ local function on_place (itemstack, placer, pointed_thing)
 						minetest.show_formspec (placer:get_player_name (), "lwexport_tools:section", spec)
 
 						minetest.log ("action", string.format ("[lwexport_tools] Export section %d nodes %dms",
-																			(x * y * z) , ((os.clock () - tm) * 1000)))
+																			volume , ((os.clock () - tm) * 1000)))
 					else
 						utils.player_error_message (placer, "Error reading section to export!")
 					end
