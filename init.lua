@@ -1,4 +1,4 @@
-local version = "0.1.2"
+local version = "0.1.3"
 
 
 
@@ -16,6 +16,7 @@ local modpath = minetest.get_modpath ("lwexport_tools")
 
 loadfile (modpath.."/settings.lua") (utils)
 loadfile (modpath.."/utils.lua") (utils)
+loadfile (modpath.."/long_process.lua") (utils)
 loadfile (modpath.."/section.lua") (utils)
 loadfile (modpath.."/crafting.lua") (utils)
 

@@ -3,6 +3,120 @@ local S = utils.S
 
 
 
+local player_data = { }
+
+
+
+local function show_form (player_name)
+	local data = player_data[player_name]
+
+	if data then
+		utils.player_message (player_name, string.format ("Export section %s to %s",
+																		  minetest.pos_to_string (data.pos1, 0),
+																		  minetest.pos_to_string (data.pos2, 0)))
+
+		minetest.show_formspec (player_name, "lwexport_tools:section", data.spec)
+
+		minetest.log ("action", string.format ("lwexport_tools export section by %s, %s to %s (%d nodes %d bytes)",
+															player_name,
+															minetest.pos_to_string (data.pos1, 0),
+															minetest.pos_to_string (data.pos2, 0),
+															data.volume,
+															data.length))
+
+		player_data[player_name] = nil
+	end
+end
+
+
+
+local function display_warning (player_name)
+	local data = player_data[player_name]
+
+	if data then
+		local warning
+
+		if data.spec:len () > 1000000 then
+			warning = "Displaying the form will take a VERY long time!"
+		elseif data.spec:len () > 500000 then
+			warning = "Displaying the form could take a long time!"
+		elseif data.spec:len () > 150000 then
+			warning = "Displaying the form could take a while."
+		else
+			show_form (player_name)
+
+			return
+		end
+
+		local spec =
+		"formspec_version[3]"..
+		"size[10.5,4.3,false]"..
+		"label[1.0,1.4;"..warning.."]"..
+		"button_exit[1.0,2.5;2.5,0.8;continue;Continue]"..
+		"button_exit[7.0,2.5;2.5,0.8;cancel;Cancel]"
+
+		minetest.show_formspec (player_name, "lwexport_tools:section", spec)
+	end
+end
+
+
+
+local function export_section_runner (player_name, pos1, pos2, param2, volume)
+	if not player_data[player_name] then
+		local spec = utils.copy_section (pos1, pos2, param2)
+
+		if spec then
+			local success
+
+			success, spec = pcall (minetest.serialize, spec)
+
+			if success and spec then
+				spec =
+				"formspec_version[3]"..
+				"size[11,11]"..
+				"textarea[0.5,0.5;10,10;clipboard;;"..
+				minetest.formspec_escape (spec).."]"
+
+				if spec:len () > utils.settings.max_section_length then
+					utils.player_error_message (player_name,
+														 string.format ("Buffer to long to export (%d)!",
+														 spec:len ()))
+
+					return
+				end
+
+				return player_name, spec, pos1, pos2, volume, spec:len ()
+
+			else
+				utils.player_error_message (player_name, "Error reading section to export!")
+			end
+		else
+			utils.player_error_message (player_name, "Error reading section to export!")
+		end
+	else
+		utils.player_error_message (player_name, "An operation is already in progress!")
+	end
+end
+
+
+
+local function export_section_callback (id, result, player_name, spec, pos1, pos2, volume, length)
+	if result and player_name and not player_data[player_name] then
+		player_data[player_name] =
+		{
+			spec = spec,
+			pos1 = pos1,
+			pos2 = pos2,
+			volume = volume,
+			length = spec:len ()
+		}
+
+		display_warning (player_name)
+	end
+end
+
+
+
 local function on_place (itemstack, placer, pointed_thing)
 	if not utils.check_privs (placer) then
 		return itemstack
@@ -22,6 +136,8 @@ local function on_place (itemstack, placer, pointed_thing)
 					return on_rightclick (under, utils.get_far_node (under), placer, itemstack, pointed_thing)
 				end
 
+				meta:set_int ("phase", 0)
+
 				local pos1 = minetest.string_to_pos (meta:get_string ("pos1"))
 				local pos2 = table.copy (under)
 
@@ -37,7 +153,6 @@ local function on_place (itemstack, placer, pointed_thing)
 
 				if volume > utils.settings.max_section_volume then
 					utils.player_error_message (placer, "Volume to large to export!")
-					meta:set_int ("phase", 0)
 
 					return itemstack
 				end
@@ -52,41 +167,9 @@ local function on_place (itemstack, placer, pointed_thing)
 					param2 = 3
 				end
 
-				meta:set_int ("phase", 0)
-
-				local tm = os.clock ()
-				local spec = utils.copy_section (pos1, pos2, param2)
-
-				if spec then
-					local success
-
-					success, spec = pcall (minetest.serialize, spec)
-
-					if success and spec then
-						spec =
-						"formspec_version[3]"..
-						"size[11,11]"..
-						"textarea[0.5,0.5;10,10;clipboard;;"..
-						minetest.formspec_escape (spec).."]"
-
-						utils.player_message (placer, string.format ("Export section %s to %s",
-																					minetest.pos_to_string (pos1, 0),
-																					minetest.pos_to_string (pos2, 0)))
-
-						minetest.log ("action", string.format ("lwexport_tools export section by %s, %s to %s",
-																			placer:get_player_name (),
-																			minetest.pos_to_string (under, 0),
-																			minetest.pos_to_string (pos2, 0)))
-
-						minetest.show_formspec (placer:get_player_name (), "lwexport_tools:section", spec)
-
-						minetest.log ("action", string.format ("[lwexport_tools] Export section %d nodes %dms",
-																			volume , ((os.clock () - tm) * 1000)))
-					else
-						utils.player_error_message (placer, "Error reading section to export!")
-					end
-				else
-					utils.player_error_message (placer, "Error reading section to export!")
+				if not utils.add_long_process (placer:get_player_name (), export_section_runner, export_section_callback,
+														 placer:get_player_name (), pos1, pos2, param2, volume) then
+					utils.player_error_message (placer:get_player_name (), "An operation is already in progress!")
 				end
 			end
 
@@ -122,3 +205,23 @@ minetest.register_craftitem ("lwexport_tools:section", {
 	stack_max = 1,
 	on_place = on_place,
 })
+
+
+
+minetest.register_on_player_receive_fields (function (player, formname, fields)
+   if formname == "lwexport_tools:section" and player and player:is_player () then
+		if fields.continue then
+			local data = player_data[player:get_player_name ()]
+
+			if data then
+				show_form (player:get_player_name ())
+
+				return
+			end
+		end
+
+		if fields.quit then
+			player_data[player:get_player_name ()] = nil
+		end
+	end
+end)

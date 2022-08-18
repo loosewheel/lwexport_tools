@@ -276,6 +276,14 @@ function utils.copy_section (pos1, pos2, param2)
 
 					map[y][z][x] = utils.get_node_data (pos, metas)
 				end
+
+				if (utils.long_process.timer () + 0.03) < os.clock () then
+					local breaker = utils.long_process.breaker ()
+
+					if breaker then
+						breaker ()
+					end
+				end
 			end
 		end
 	else
@@ -304,9 +312,59 @@ function utils.copy_section (pos1, pos2, param2)
 
 					map[y][z][x] = utils.get_node_data (pos, metas)
 				end
+
+				if (utils.long_process.timer () + 0.03) < os.clock () then
+					local breaker = utils.long_process.breaker ()
+
+					if breaker then
+						breaker ()
+					end
+				end
 			end
 		end
 	end
 
 	return map
+end
+
+
+
+local long_processes = { }
+
+
+
+local function long_processes_callback (id, result, ...)
+	for player_name, data in pairs (long_processes) do
+		if data.id == id then
+			local callback = data.callback
+
+			long_processes[player_name] = nil
+
+			if callback then
+				callback (id, result, ...)
+			end
+
+			return
+		end
+	end
+end
+
+
+
+function utils.add_long_process (player_name, func, callback, ...)
+	if not long_processes[player_name] then
+		local id = utils.long_process.add (func, long_processes_callback, ...)
+
+		if id then
+			long_processes[player_name] =
+			{
+				id = id,
+				callback = callback
+			}
+
+			return true
+		end
+	end
+
+	return false
 end

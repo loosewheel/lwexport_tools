@@ -1,2 +1,5 @@
 # Maximum block volume for a export section operation.
 lwexport_tools_max_section_volume (Maximum section volume) int 64000
+
+# Maximum byte length of export section operation.
+lwexport_tools_max_section_length (Maximum buffer length) int 500000
