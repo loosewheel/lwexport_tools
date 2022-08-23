@@ -16,3 +16,7 @@ v0.1.3
 *	Implemented gradual performance of large operations to minimise server burden.
 *	Removed millisecond info from log message (no longer relevant).
 *	Added buffer byte length to log message.
+
+
+v0.1.4
+*	Minor code improvements.

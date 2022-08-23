@@ -42,6 +42,8 @@ function long_process.remove (id)
 	if id then
 		for i = 1, #processes, 1 do
 			if processes[i].id == id then
+				local breaker = ((processes.current == id) and processes[i].breaker)
+
 				if processes.current == i then
 					processes.current = 0
 				elseif processes.current > i then
@@ -54,16 +56,26 @@ function long_process.remove (id)
 
 				table.remove (processes, i)
 
+				if breaker then
+					breaker ()
+				end
+
 				return true
 			end
 		end
 	elseif processes[processes.current] then
+		local breaker = processes[processes.current].breaker
+
 		if processes.index >= processes.current then
 			processes.index = processes.index - 1
 		end
 
 		table.remove (processes, processes.current)
 		processes.current = 0
+
+		if breaker then
+			breaker ()
+		end
 
 		return true
 	end
@@ -101,6 +113,30 @@ function long_process.timer (id)
 	end
 
 	return os.clock () + 3600
+end
+
+
+
+function long_process.expire (secs, id)
+	if id then
+		for i = 1, #processes, 1 do
+			if processes[i].id == id then
+				if (processes[i].timer + secs) <= os.clock () then
+					processes[i].breaker ()
+
+					return true
+				end
+			end
+		end
+	elseif processes[processes.current] then
+		if (processes[processes.current].timer + secs) <= os.clock () then
+			processes[processes.current].breaker ()
+
+			return true
+		end
+	end
+
+	return false
 end
 
 

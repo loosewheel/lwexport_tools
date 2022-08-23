@@ -277,13 +277,7 @@ function utils.copy_section (pos1, pos2, param2)
 					map[y][z][x] = utils.get_node_data (pos, metas)
 				end
 
-				if (utils.long_process.timer () + 0.03) < os.clock () then
-					local breaker = utils.long_process.breaker ()
-
-					if breaker then
-						breaker ()
-					end
-				end
+				utils.long_process.expire (0.03)
 			end
 		end
 	else
@@ -313,13 +307,7 @@ function utils.copy_section (pos1, pos2, param2)
 					map[y][z][x] = utils.get_node_data (pos, metas)
 				end
 
-				if (utils.long_process.timer () + 0.03) < os.clock () then
-					local breaker = utils.long_process.breaker ()
-
-					if breaker then
-						breaker ()
-					end
-				end
+				utils.long_process.expire (0.03)
 			end
 		end
 	end
